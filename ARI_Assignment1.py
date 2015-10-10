@@ -1,19 +1,20 @@
+
 import math
 import sqlite3
-conn = sqlite3.connect('renewable.db') # create a "connection"
-c = conn.cursor() # create a "cursor" 
-c.execute("SELECT * FROM location;") # execute a SQL command
-
-
 import pandas as pd;
-pd.set_option('display.max_columns', None)
+
+
+conn = sqlite3.connect('renewable.db') 
+c = conn.cursor() 
+c.execute("SELECT * FROM location;")
+
 
 
 locations = pd.read_sql_query("SELECT * from location", conn)
 port = pd.read_sql_query("SELECT * from ports", conn)
 print locations
-print port.head()
-print len(locations.index)
+print port
+
 
 def distance(lat_orig,long_orig,lat_dest,long_dest):
 
@@ -25,6 +26,7 @@ def distance(lat_orig,long_orig,lat_dest,long_dest):
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     d = radius * c
     return d
+
     
 def charge(distance, production):
     
@@ -32,42 +34,39 @@ def charge(distance, production):
     return charge
 
 
-production_sum = sum(locations.production)
-print production_sum
 
 total_economic_cost = []
 optimum_port_list=[]
+production_sum = sum(locations.production)
+
 for i in range (0,len(locations)):
     total_charge_port = []   
     total_charge_location = 0
     total_location = []
 
     for j in range(0,len(locations)):
+        
         inter_location = distance(locations.lat[i],locations.long[i],locations.lat[j],locations.long[j])
         charge_inter_location = charge(inter_location, locations.production[j])
         total_charge_location += charge_inter_location
-
+    
     
     for p in range (0, len(port)):
-        inter_loc_port = distance(locations.lat[i],locations.long[i],port.lat[p],port.long[p])
         
+        inter_loc_port = distance(locations.lat[i],locations.long[i],port.lat[p],port.long[p])        
         total_charge_port.append(charge(inter_loc_port, production_sum))
-        
+    
+    
     total_charge_port_min = min(total_charge_port)
-    optimum_port_list.append(total_charge_port.index(min(total_charge_port)))
-    print optimum_port_list
-    total_economic_cost.append(total_charge_location + total_charge_port_min)
-    
+    optimum_port_list.append(total_charge_port.index(min(total_charge_port)))   
+    total_economic_cost.append(total_charge_location + total_charge_port_min)    
     index_total_economic_cost = total_economic_cost.index(min(total_economic_cost))
-    print index_total_economic_cost
-  
-print optimum_port_list[index_total_economic_cost]
-    
-print total_economic_cost
-total_economic_cost_minimum = min(total_economic_cost)
-print total_economic_cost_minimum
-    
+
+
+
+print "The best location for the plant is %d " %index_total_economic_cost  
+print "The optimum location for port from the location is %d" %optimum_port_list[index_total_economic_cost]
+
     
         
     
-#print total_charge_port_min
